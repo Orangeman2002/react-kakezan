@@ -1,0 +1,19 @@
+Options -MultiViews
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.html [QSA,L]
+
+# authenticate(Basic)
+# https://gmotech.jp/semlabo/seo/blog/htaccess/
+AuthUserFile /home/www/kakezan/.htpasswd
+AuthGroupFile /dev/null
+AuthName "Please enter your ID and password"
+AuthType Basic
+require valid-user
+
+# 特定のページのみBasic認証
+SetEnvIf Request_URI "(hello)" auth_chk
+Satisfy any
+Deny from env=auth_chk
+
+
