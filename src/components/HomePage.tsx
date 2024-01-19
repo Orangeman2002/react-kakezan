@@ -14,7 +14,7 @@ const HomePage = () => {
 
     const [resultData, setResultData] = useState<Calc[]>([]);
 
-    const [count, setCount] = useState(-1);
+    const [count, setCount] = useState(0);
     const [isRunning, setRunning] = useState(false);
     const [isEnd, setEnd] = useState(false);
 
@@ -38,12 +38,14 @@ const HomePage = () => {
         return cloneArray
     }
 
+    // 通常スタート
     const handleIsRunning = (onoff: boolean) => {
+
         setRunning(onoff)
+
     }
 
-
-    useEffect(() => {
+    const createQuestions = () => {
 
         let list: Calc[] = [];
 
@@ -61,45 +63,88 @@ const HomePage = () => {
 
         //シャッフル       
         list = shuffleArray(list)
-        //先頭を追加
-        list.unshift({
-            left: -1,
-            right: -1,
-            result: -1
-        })
-
-        //最後尾を追加
-        list.push({
-            left: -1,
-            right: -1,
-            result: -1
-        })
-
 
         setResultData(list)
 
+        console.log(list.length)
+    }
+
+    // 数値の初期化
+    useEffect(() => {
+
+        createQuestions()
+
     }, [])
 
+    // 問題を作成
+    const getQuestion = () => {
 
-    return (
-        <div className='w-screen mt-6 container min-h-screen'>
+        // 問題
+        let q1 = null
 
-            <div className='mx-12 mb-4 flex justify-between '>
+        if (resultData.length > count) {
+            q1 = resultData[count]
+        }
 
-                {/* Start */}
-                <button className='bg-green-400 rounded  w-24  whitespace-nowrap px-2 py-4 hover:bg-green-600 hover:text-white duration-300 shadow-lg shadow-gray-400'
+        //前の問題の答え
+        const q0 = resultData[count - 1]
+
+
+        return (
+            <>
+                {q1 != null && <div className={`"text-6xl sm:text-9xl text-blue-800"}`}>
+                    <div className={`flex mx-auto container justify-center`}>
+                        <div className='text-lg'>{count + 1} 問目</div>
+                        <div>{q1.left}</div>
+                        <div className='mx-2'>×</div>
+                        <div>{q1.right}</div>
+
+                    </div>
+                </div>}
+                <div className='text-2xl text-orange-400 sm:text-3xl'>
+                    {q0 != null && (<div className={`flex mx-auto container justify-center`}>
+
+                        <div>{q0.left}</div>
+                        <div className='mx-2'>×</div>
+                        <div>{q0.right}</div>
+                        <div className='mx-2'>=</div>
+                        <div>{q0.result}</div>
+                    </div>)}
+                </div>
+            </>
+        )
+
+    }
+
+    const createQButton = (q_count: number) => {
+
+        // 81問のボタンだけやり直し表示
+        const buttondsp = q_count === 81 || !isRunning
+
+        console.log(buttondsp)
+
+        return (
+
+            <div >
+                {buttondsp && (<button className='bg-green-400 rounded  w-32  px-2 py-4 hover:bg-green-600 hover:text-white duration-300 shadow-lg shadow-gray-400'
                     // Start処理
                     onClick={() => {
 
-
                         if (isRunning) {
-
+                            //停止
                             handleIsRunning(false);
                             newRef.current?.handleReset();
 
+                            //巻き戻し
                             setCount(-1);
+                            // 問題を初期化
+                            createQuestions()
                         }
                         else {
+
+                            // 問題数を指定
+                            setResultData(resultData.slice(81 - q_count))
+
                             handleIsRunning(true);
                             newRef.current?.handleStart();
                             setCount(count + 1);
@@ -107,14 +152,27 @@ const HomePage = () => {
 
                         setEnd(false)
 
-                    }}> {isRunning ? "やりなおし" : "START"}
-                </button>
+                    }}> {isRunning ? "やりなおし" : `${q_count} 問 START`}
 
+                </button>)}
+            </div>
+        )
+    }
+
+    return (
+        <div className='w-screen mt-6 container min-h-screen'>
+
+            <div className='mx-12 mb-4 flex justify-between '>
+                {createQButton(81)}
+                {createQButton(10)}
+                {createQButton(40)}
+
+                {/* 進むボタン */}
                 {isRunning && (<button className='text-sm bg-sky-400 rounded w-24 whitespace-nowrap px-2 py-4 hover:bg-sky-600 hover:text-white duration-300 shadow-lg shadow-gray-400'
 
                     onClick={() => {
 
-                        if (count >= 80) {
+                        if (count >= resultData.length - 1) {
                             newRef.current?.handlePause();
                             setEnd(true)
                         }
@@ -125,31 +183,16 @@ const HomePage = () => {
                     }}>すすむ！</button>)}
             </div>
             {
-                count <= 81 ? (
+                // 問題数を超えたらクリア
+                count <= resultData.length ? (
                     <div>
-                        {resultData && resultData.slice(count, count + 2).reverse().map((item, index) => (
-                            // 0が上段 1が下段
-                            <div className={`${index === 1 ? "text-2xl sm:text-4xl text-orange-400" : "text-6xl sm:text-9xl text-blue-800"}`}
-                                key={index}>
-                                {item.result < 1 ? (
-                                    <></>
-                                ) : (
-                                    <div className={`flex mx-auto container justify-center`}>
-                                        {index === 0 && <div className='text-lg'>{count + 1} 問目</div>}
-                                        <div>{item.left}</div>
-                                        <div className='mx-2'>×</div>
-                                        <div>{item.right}</div>
-                                        {index === 1 && <div>=</div>}
-                                        {index === 1 && <div>{item.result}</div>}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                        {
+                            getQuestion()
+                        }
                     </div>
 
                 ) : <h2 className='  text-6xl sm:text-8xl py-6 text-center text-yellow-200 bg-fuchsia-500'>CLEAR</h2>
             }
-
 
             <WrappedStopwatch {...{
                 className: 'container mx-auto text-center text-4xl sm:text-6xl',
